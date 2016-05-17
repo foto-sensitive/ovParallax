@@ -1,149 +1,95 @@
+
+
+/*Created by Robert Pavlovskis on 02/03/2016
+This is example shows how you can apply Parallax Scroll to 360° media.
+Use the slider to adjust the ratio which determines the scroll different layers.*/
+
+
 #include "ofApp.h"
 
 //--------------------------------------------------------------
 void ofApp::setup(){
 
-	//prepare quadric for sphere
+	//Prepare quadric for sphere
 	quadric = gluNewQuadric();
 	gluQuadricTexture(quadric, GL_TRUE);
 	gluQuadricNormals(quadric, GLU_SMOOTH);
 
+	//Prepare 360° unwrap objects
 	for (i = 0; i < NWRAPS; i++)
 		myWrap[i].setup(quadric);
 
-
-	img.loadImage("hands.png");
-
-	tex.loadData(img);
-
-
-
-	width = img.getWidth();
-	height = img.getHeight();
-
-	pixelout = new unsigned char[width*height * 4];//Assigns length to array
-	pixelin = new unsigned char[width*height * 3];
-
-	pixelin = img.getPixels();
-
-	for (int i = 0; i < width; i++) {
-		for (int j = 0; j < height; j++) {
-
-			thre = 50;
-
-			pointer = (j*width + i);
-
-			red = pixelin[pointer * 3 + 0];//red
-			green = pixelin[pointer * 3 + 1];//green
-			blue = pixelin[pointer * 3 + 2];//blue
-
-
-
-			pixelout[(j*width + i) * 4 + 0] = pixelin[(j*width + i) * 3 + 0];//red
-			pixelout[(j*width + i) * 4 + 1] = pixelin[(j*width + i) * 3 + 1];//green
-			pixelout[(j*width + i) * 4 + 2] = pixelin[(j*width + i) * 3 + 2];//blue
-
-			if (green <= blue || green <= red || green < thre)
-				pixelout[(j*width + i) * 4 + 3] = 255;//alpha
-			else
-				pixelout[(j*width + i) * 4 + 3] = 0;//alpha
-		}
-	}
-
-	tex2.loadData(pixelout, width, height, GL_RGBA);
-
-	//Get directory size
+	//Get image sequence directory
 	dir.listDir("seq5");
-
+	//Prepare image sequence
 	sequence.loadSequence("seq5/frame", "png", 0, dir.size() - 1, 4);
-	sequence.preloadAllFrames();	//this way there is no stutter when loading frames
-	sequence.setFrameRate(5); //set to ten frames per second
+	//this way there is no stutter when loading frames
+	sequence.preloadAllFrames();	
+	//Set to five frames per second
+	sequence.setFrameRate(5); 
 
-
+	/*Demo videos are too large for github,
+	this will show up as blank unless you drag & drop a 360 video of your own to the window
+	or go to www.mediafire.com/url to download the demos I made for this purpose.*/
 	bg.loadMovie("sci_cube.avi");
 	bg.setLoopState(OF_LOOP_NORMAL);
 	bg.play();
 
-	ofSetVerticalSync(true);
+	//Place camera inside sphere at 0,0,0
+	cam.setAutoDistance(false);
 
 	//GUI
 	gui.setup();
-	gui.add(xParallax.setup("X-Parallax", 0, -100, 100));
-	gui.add(yParallax.setup("Y-Parallax", 0, -100, 100));
-	gui.setPosition(ofGetWidth()*0.75, ofGetHeight()*0.75);
+	gui.add(parallax.setup("Parallax", 150, -200, 200));
+	gui.setPosition(ofGetWidth()*0.0125, ofGetHeight()*0.11);
+
+	ofSetVerticalSync(true);
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
 
-	for (i = 0; i < NWRAPS; i++) {
-		if (sel == i)
-			selected = true;
-		else selected = false;
-		if(all)
-		myWrap[i].update(&v1, selected);
-		else myWrap[i].update(&v1, true);
-	}
-
 	bg.update();
 
-	v1.x = ofLerp(v1.x, mouseX+translate.x, 0.005);
-	v1.y = ofLerp(v1.y, mouseY+translate.y, 0.005);
-
+	//Play image sequence through the use of phasor
 	sequence.getFrameAtPercent(phasor(0.005, 0, 1))->draw(0, 0, 0, 0);
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+	
+	
 
+	//Place camera inside the sphere
+	cam.begin();
+
+	ofPushMatrix();
+	ofRotateX(270);
+
+	//Map 360° Background texture to sphere
 	myWrap[0].draw(0, &bg, 0.5, 300);
+	
+	//Orient the sphere in relation to camera movement, creates parallax scroll
+	ofPushMatrix();
+	ofRotateX(ofMap(cam.getGlobalOrientation().x(), -1, 1, -1, 1)*parallax);
+	ofRotateY(ofMap(cam.getGlobalOrientation().y(), -1, 1, -1, 1)*parallax);
+	ofRotateZ(ofMap(cam.getGlobalOrientation().z(), -1, 1, -1, 1)*parallax);
+
 	myWrap[1].draw(1, &sequence, 0.75, 200);
 
-	incX = 0;
-	incY = 0;
-	
-	layers();
+	ofPopMatrix();
+	ofPopMatrix();
+
+	cam.end();
+
+	GUI();
 
 	gui.draw();
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-	if (key == OF_KEY_LEFT) {
-		translate.x -= inc;
-		v1.x = mouseX + translate.x;
-	}
-	if (key == OF_KEY_RIGHT) {
-		translate.x += inc;
-		v1.x = mouseX + translate.x;
-	}
-	if (key == OF_KEY_UP) {
-		translate.y -= inc;
-		v1.y = mouseY + translate.y;
-	}
-	if (key == OF_KEY_DOWN) {
-		translate.y += inc;
-		v1.y = mouseY + translate.y;
-	}
 
-		if (key == '1')
-			sel = 0;
-
-		if (key == '2')
-			sel = 1;
-
-		if (key == ' ')
-			all = !all;
-
-
-		//Reset rotations
-		if (key == '0') {
-			myWrap[0].x = 92;
-			myWrap[0].y = -187;
-			myWrap[1].x = 232;
-			myWrap[1].y = 843;
-
-		}
 }
 
 //--------------------------------------------------------------
@@ -154,12 +100,6 @@ void ofApp::keyReleased(int key){
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
 
-	if (doit) {
-		incX = mouseX - ofGetPreviousMouseX();
-		incY = mouseY - ofGetPreviousMouseY();
-	}
-
-	dont = true;
 }
 
 //--------------------------------------------------------------
@@ -215,33 +155,32 @@ double ofApp::phasor(double frequency, double startphase, double endphase) {
 }
 
 //--------------------------------------------------------------
-void ofApp::layers() {
+void ofApp::GUI() {
 
-	for (i = 0; i < NWRAPS; i++) {
-		
-		if (sel == i)
-			ofSetColor(200, 200, 255);
-		else
-			ofSetColor(200);
+	ofSetColor(0, 130);
+	ofRect(10, 10, 357, 230);
+	ofSetColor(255);
 
-		ofRect(0, 30 * i, 200, 30);
+	//Tooltip
+	ofDrawBitmapString("Use  the  slider to  adjust the  ratio  of", 20, 30);
+	ofDrawBitmapString("parallax scroll, Drag the mouse across the", 20, 50);
+	ofDrawBitmapString("screen to look around.", 20, 70);
 
-		ofSetColor(0);
 
-		string s1 = "X: ";
-		string s2 = std::to_string((int)myWrap[i].x);
-		string s3 = " Y: ";
-		string s4 = std::to_string((int)myWrap[i].y);
+	//Display Orientation
+	ofDrawBitmapString("Rotation Orientation: ", 15, 15 + 130);
+	string msg = std::to_string(cam.getGlobalOrientation().x());
+	ofDrawBitmapString("X1:" + msg, 15, 15 + 160);
+	msg = std::to_string(cam.getGlobalOrientation().y());
+	ofDrawBitmapString("Y1:" + msg, 15, 15 + 180);
+	msg = std::to_string(cam.getGlobalOrientation().z());
+	ofDrawBitmapString("Z1:" + msg, 15, 15 + 200);
 
-		string s = s1 + s2 + s3 + s4;
-
-		ofDrawBitmapString(s, 15, 15 + 30 * i);
-
-		in = in +.01;
-
-		ofDrawBitmapString(ofNoise(in, ofGetFrameNum() / 50.0) * ofGetWidth()*0.05 + ofGetWidth() / 2, 130, 15 + 30);
-
-		
-	}
+	msg = std::to_string(ofMap(cam.getGlobalOrientation().x(), -1, 1, 1, -1));
+	ofDrawBitmapString("X2:" + msg, 140, 15 + 160);
+	msg = std::to_string(ofMap(cam.getGlobalOrientation().y(), -1, 1, 1, -1));
+	ofDrawBitmapString("Y2:" + msg, 140, 15 + 180);
+	msg = std::to_string(ofMap(cam.getGlobalOrientation().z(), -1, 1, 1, -1));
+	ofDrawBitmapString("Z2:" + msg, 140, 15 + 200);
 
 }

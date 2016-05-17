@@ -8,26 +8,8 @@ void ovWrap::setup(GLUquadricObj *_quadric) {
 
 }
 
-void ovWrap::update(ofVec2f *_rot, bool selected){
+void ovWrap::update(){
 
-	if (selected) {
-		
-		if (once) {
-			
-			//Doesn't do proper cacheing of coordinates, why
-			store.x = x;
-			store.y = y;
-			previous.x = _rot->x;
-			previous.y = _rot->y;
-			once = false;
-		}
-		x = _rot->x - (previous.x - store.x);
-		y = _rot->y - (previous.y - store.y);
-	}
-	else {
-		if(!once)
-		once = true;
-	}
 
 }
 
@@ -69,7 +51,7 @@ void ovWrap::sphere(float mag, ofVec2f res, int s) {
 
 	ofPushMatrix();
 
-	ofTranslate(ofGetWidth() / 2, 360, 650);
+	//ofTranslate(ofGetWidth() / 2, 360, 650);
 	//Rotate Sphere
 	ofRotateX(y*mag);
 	ofRotateZ(x*mag);

@@ -27,56 +27,29 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 		double phasor(double frequency, double startphase, double endphase);
-		void layers();
+		void GUI(); //Displays rotation
 
+		//Adds camera and controls
+		ofEasyCam cam;
+
+		//Video Background
 		ofVideoPlayer bg;
-		ofVideoPlayer *vid;
-
-		int *test;
-
-		ofTexture tex, tex2;
-		ofImage img;
-
-		int incX = 0;
-		int incY = 0;
-		int inc = 10;
-
-		ofVec2f v1, translate; // v1.x is 0, v1.y is 0
-
-		char c; //for integer to character conversion
-
-		bool selected;
-		bool all = false; //All selected
-
-		int sel = 0; //Layer Selection
-
-		int width, height;
-
-		bool dont = false;
-		bool doit = false;
 
 		//360 Vision
 		GLUquadricObj *quadric;
 
-		unsigned char * pixelout;
-		unsigned char * pixelin;
-
-		int thre, pointer, red, green, blue;
-
-		int i, j, u; //Iterators
-
+		//Iterators
+		int i, j, u; 
 
 		//Sequencing Images
 		ofxImageSequence sequence;
 		ofDirectory dir;
 		double phase;
 
+		//360° Unwrap objects
 		ovWrap myWrap[NWRAPS];
 		
+		//GUI
 		ofxPanel gui;
-		ofxIntSlider xParallax;
-		ofxIntSlider yParallax;
-
-
-		int in = 0;//For noise
+		ofxIntSlider parallax;
 };
